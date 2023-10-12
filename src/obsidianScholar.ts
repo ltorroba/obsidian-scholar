@@ -32,6 +32,30 @@ export class ObsidianScholar {
 		return paperData.title.replace(/[^a-zA-Z0-9 ]/g, "");
 	}
 
+	getLocalFileFromCitekey(citekey: string): TFile | undefined {
+		// Loop through all the files in the note location and find the one with the citekey
+		let files = this.app.vault.getMarkdownFiles();
+		for (let file of files) {
+			let paperData = this.getPaperDataFromLocalFile(file);
+			if (paperData.citekey === citekey) {
+				return file;
+			}
+		}
+	}
+
+	getCitekeyFromLocalFile(file: TFile): string | undefined {
+		let fileCache = this.app.metadataCache.getFileCache(file);
+		let frontmatter = fileCache?.frontmatter;
+		return frontmatter?.citekey;
+	}
+
+	getPaperDataFromCitekey(citekey: string): StructuredPaperData | undefined {
+		let file = this.getLocalFileFromCitekey(citekey);
+		if (file) {
+			return this.getPaperDataFromLocalFile(file);
+		}
+	}
+
 	getPaperDataFromLocalFile(file: TFile): StructuredPaperData {
 		let fileCache = this.app.metadataCache.getFileCache(file);
 		let frontmatter = fileCache?.frontmatter;
