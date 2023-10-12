@@ -209,6 +209,43 @@ export default class ObsidianScholarPlugin extends Plugin {
 		// We want to be able to view bibtex files in obsidian
 		this.registerExtensions(["bib"], "markdown");
 		this.registerExtensions(["tex"], "markdown");
+
+		// Register postprocessor for citekeys
+		this.registerMarkdownPostProcessor( (el, ctx) => {
+			// TODO: Need to fix
+			// Find codeblocks with [citekey] in it
+			let codeblocks = el.querySelectorAll("code");
+
+			// Create dictionary to store mapping from citation key to index
+			let citekeyToIndex : {[key: string]: number} = {};
+			let citationIndex = 0;
+
+			// TODO: This doesn't actually iterate through every codeblock, so the incrementing logic won't work
+			for (let i = 0; i < codeblocks.length; i++) {
+				let codeblock = codeblocks.item(i);
+				let codeblockText = codeblock.innerText.trim();
+
+				if (codeblockText.startsWith("[@") && codeblockText.endsWith("]")) {
+					let citekey = codeblockText.substring(2, codeblockText.length - 1);
+					let file = this.obsidianScholar.getLocalFileFromCitekey(citekey);
+					if (!file) {
+						codeblock.innerHTML = `<a>[?]</a>`;
+						continue;
+					}
+
+					let localCitationIndex = 0;
+					if (citekey in citekeyToIndex) {
+						localCitationIndex = citekeyToIndex[citekey];
+					} else {
+						citationIndex += 1;
+						citekeyToIndex[citekey] = citationIndex;
+						localCitationIndex = citationIndex;
+					}
+
+					codeblock.innerHTML = `<a href="${file.path}">[${localCitationIndex}]</a>`;
+				}
+			}
+		});
 	}
 
 	onunload() {}
